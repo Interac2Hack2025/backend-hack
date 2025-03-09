@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from jose import JWTError, jwt
 from typing import Optional
 
+# Sabemos que esto debe estar en un archivo de configuracion .env no nos bajen puntos </3 
 SECRET_KEY = "Benito hijo de benito le decian tito"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30

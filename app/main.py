@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import users, transactions
+from routes import users, transactions, qr_payment
 from db import create_all_tables
+
 
 app = FastAPI(lifespan=create_all_tables)
 
@@ -16,3 +17,4 @@ app.add_middleware(
 
 app.include_router(users.router)
 app.include_router(transactions.router)
+app.include_router(qr_payment.router)
