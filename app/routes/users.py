@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import select
-from schemas.users import UserMe, UserAuth, UserCreate
+from schemas.users import UserMe, UserAuth, UserCreate, UserSearch
 from db import SessionDep
 from models.users import User
 from models.tipos_users import TipoUsuario
