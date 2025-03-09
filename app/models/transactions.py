@@ -18,8 +18,6 @@ class Transaction(SQLModel, table=True):
     user: User = Relationship()
     detailsTrx: str
     amount: float
-    idType: str = Field(foreign_key="transactiontype.id")
-    type: TransactionType = Relationship()
     idStatus: str = Field(foreign_key="transactionstatus.id")
     transaction_status: TransactionStatus = Relationship()
     created_at: datetime = Field(default=datetime.now())

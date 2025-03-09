@@ -10,7 +10,7 @@
 #   "format": "2"                  // QR format version
 # }
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from models.qr_model import QR
 import requests
@@ -59,17 +59,27 @@ async def create_payment(amount: float, detail: str, session: SessionDep):
         if transaction is not None:
             raise HTTPException(status_code=400, detail="Transaction already exists")
         else:
-            transaction = QR(
+            qr_generated = QR(
                 qr=data["qr"],
                 transaction_id=data["transactionId"],
                 payment_url=data.get("deeplink"),
                 status=PaymentStatus.PENDING.value
             )
+            # transaction = Transaction(
+            #     idTrx=data["transactionId"],
+            #     idUser=transaction_data.id,
+            #     detailsTrx=data["detail"],
+            #     amount=data["amount"],
+            #     idStatus=PaymentStatus.PENDING.value,
+            #     created_at=datetime.now(),
+            #     updated_at=datetime.now()
+            # )
+            
         
         # Store the transaction in the database
-        session.add(transaction)
+        session.add(qr_generated)
         session.commit()
-        session.refresh(transaction)
+        session.refresh(qr_generated)
 
         return {
             "transaction_id": data["transactionId"],
