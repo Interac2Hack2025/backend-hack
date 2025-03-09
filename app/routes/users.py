@@ -33,12 +33,6 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 @router.post("/auth",response_model=dict, description="Obtener token de acceso")
 async def auth_user(user_auth: Annotated[OAuth2PasswordRequestForm, Depends()], 
                     session: SessionDep):
-    """
-    Autenticación de usuario
-    
-    - **email**: correo electrónico del usuario
-    - **password**: contraseña del usuario
-    """
     user = session.exec(select(User).where(User.email == user_auth.username)).first()
     if not user or user.password != user_auth.password: 
         raise HTTPException(status_code=401, detail="Invalid credentials")
