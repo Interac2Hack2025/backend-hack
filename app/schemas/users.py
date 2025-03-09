@@ -2,7 +2,7 @@ from sqlmodel import SQLModel
 
 
 class UserMe(SQLModel):
-    id: str
+    email: str
     name: str
     role: int
 

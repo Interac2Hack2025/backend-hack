@@ -22,15 +22,18 @@ def get_current_user(token: Annotated[UserAuth, Depends(oauth2_scheme)]):
         user_email: str = payload.get("sub")
         if user_email is None:
             raise HTTPException(status_code=403, detail="Invalid credentials")
-        return user_email
+        return {"username": user_email}
     except JWTError:
         raise HTTPException(status_code=403, detail="Invalid credentials")
 
-@router.get("/me", response_model=UserMe, dependencies=[Depends(get_current_user)])
-async def read_users_me(current_user: User = Depends(get_current_user)):
+@router.get("/me", response_model=UserMe)
+async def read_users_me(session: SessionDep,
+                       current_user: User = Depends(get_current_user)):
     if not current_user:
         raise HTTPException(status_code=404, detail="Not found")
-    return current_user
+    else:
+        user = session.exec(select(User).where(User.email == current_user["username"])).first()
+    return user
 
 @router.post("/auth",response_model=dict, description="Obtener token de acceso")
 async def auth_user(user_auth: UserAuth, 
