@@ -5,13 +5,18 @@ from schemas.users import UserMe, UserAuth, UserCreate
 from db import SessionDep
 from models.users import User
 from models.tipos_users import TipoUsuario
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
+from typing import Annotated
 
 router = APIRouter(prefix="/user", tags=["users"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/user/auth",
+    scheme_name="UserAuth",  # Nombre más descriptivo
+    description="Ingrese sus credenciales de usuario",  # Descripción más clara
+    auto_error=True)
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_email: str = payload.get("sub")
@@ -25,9 +30,16 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 async def read_users_me(current_user: str = Depends(get_current_user)):
     return {"email": current_user}
 
-@router.post("/auth")
-async def auth_user(user_auth: UserAuth, session: SessionDep):
-    user = session.exec(select(User).where(User.email == user_auth.email)).first()
+@router.post("/auth",response_model=dict, description="Obtener token de acceso")
+async def auth_user(user_auth: Annotated[OAuth2PasswordRequestForm, Depends()], 
+                    session: SessionDep):
+    """
+    Autenticación de usuario
+    
+    - **email**: correo electrónico del usuario
+    - **password**: contraseña del usuario
+    """
+    user = session.exec(select(User).where(User.email == user_auth.username)).first()
     if not user or user.password != user_auth.password: 
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token(data={"sub": user.email})
