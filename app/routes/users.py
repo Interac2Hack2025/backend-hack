@@ -1,15 +1,30 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import select
-from schemas.users import UserMe
+from schemas.users import UserMe, UserAuth, UserCreate, UserSearch
 from db import SessionDep
 from models.users import User
 from models.tipos_users import TipoUsuario
 
 router = APIRouter(prefix="/user", tags=["users"])
 
-@router.get("/me", response_model=User)
-async def read_users_me(current_user: UserMe = Depends()):
+@router.get("/me", response_model=UserMe)
+async def read_users_me(current_user: UserSearch = Depends()):
     return current_user
+
+@router.post("/auth")
+async def auth_user(user_auth: UserAuth, session: SessionDep):
+    user = session.exec(select(User).where(User.email == user_auth.email)).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return user
+
+@router.post("/create")
+async def create_user(user_create: UserCreate, session: SessionDep):
+    user = User(email=user_create.email, password=user_create.password)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
 
 @router.get("/types")
 async def get_user_types(session: SessionDep):
