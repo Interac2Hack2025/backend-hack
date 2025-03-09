@@ -22,4 +22,4 @@ def verify_access_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
-        raise HTTPException(status_code=403, detail="Could not validate credentials")
+        raise HTTPException(status_code=401, detail="Could not validate credentials")

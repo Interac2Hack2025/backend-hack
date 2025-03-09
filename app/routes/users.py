@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
-from functions.auth import ALGORITHM, SECRET_KEY, create_access_token
+from functions.auth import create_access_token, verify_access_token, SECRET_KEY, ALGORITHM
 from schemas.users import UserMe, UserAuth, UserCreate
 from db import SessionDep
 from models.users import User
@@ -26,9 +26,9 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     except JWTError:
         raise HTTPException(status_code=403, detail="Invalid credentials")
 
-@router.get("/me", response_model=UserMe)
-async def read_users_me(current_user: str = Depends(get_current_user)):
-    return {"email": current_user}
+@router.get("/me", response_model=UserMe, dependencies=[Depends(get_current_user)])
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @router.post("/auth",response_model=dict, description="Obtener token de acceso")
 async def auth_user(user_auth: Annotated[OAuth2PasswordRequestForm, Depends()], 
