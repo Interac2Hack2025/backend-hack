@@ -6,6 +6,9 @@ class UserMe(SQLModel):
     name: str
     role: int
 
+class UserSearch(SQLModel):
+    id: str
+
 class UserAuth(SQLModel):
     email: str
     password: str

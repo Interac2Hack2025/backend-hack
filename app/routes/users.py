@@ -8,7 +8,7 @@ from models.tipos_users import TipoUsuario
 router = APIRouter(prefix="/user", tags=["users"])
 
 @router.get("/me", response_model=UserMe)
-async def read_users_me(current_user: UserMe = Depends()):
+async def read_users_me(current_user: UserSearch = Depends()):
     return current_user
 
 @router.post("/auth")
