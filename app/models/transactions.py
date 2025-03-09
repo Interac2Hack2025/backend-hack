@@ -13,7 +13,7 @@ class TransactionType(SQLModel, table=True):
     created_at: datetime = Field(default=datetime.now())
 
 class Transaction(SQLModel, table=True):
-    idTrx: int = Field(default=None, primary_key=True)
+    idTrx: str = Field(default=None, primary_key=True)
     idUser: str = Field(foreign_key="user.id")
     user: User = Relationship()
     detailsTrx: str

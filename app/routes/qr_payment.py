@@ -16,9 +16,11 @@ from models.qr_model import QR
 import requests
 from typing import Dict, Any
 from enum import Enum
+from db import SessionDep
+from models.transactions import Transaction
+
 
 router = APIRouter(prefix="/qr-payment", tags=["qr-payment"])
-
 class PaymentStatus(Enum):
     # We'll define the states here once you confirm them
     PENDING = "1"
@@ -26,18 +28,13 @@ class PaymentStatus(Enum):
     REJECTED = "3"
     # Your custom state here
 
-@router.post("/create-payment")
-async def create_payment(amount: float, detail: str):
-    # API configuration
-    # Si, sabemos que toda esta info debe estar en un archivo de configuracion .env no nos bajen puntos </3 es por cosas de tiempo y practicidad, graciaas.
+async def request_payment(amount: float, detail: str) -> Dict[str, Any]:
     API_URL = "https://apis-merchant.qa.deunalab.com/merchant/v1/payment/request"
     HEADERS = {
         "x-api-key": "9fd4ac9c11b6455fa7270dba42a135ff",
         "x-api-secret": "70aa3a0caa6341f88b67ebb167ef7a50",
         "Content-Type": "application/json"
     }
-    
-    # Request payload
     payload = {
         "pointOfSale": "4121565",
         "qrType": "dynamic",
@@ -47,24 +44,45 @@ async def create_payment(amount: float, detail: str):
         "format": "2"
     }
 
+    response = requests.post(API_URL, headers=HEADERS, json=payload)
+    response.raise_for_status()
+    return response.json()
+
+
+@router.post("/create-payment")
+async def create_payment(amount: float, detail: str, session: SessionDep):
     try:
-        # Make request to DeUna API
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
-        response.raise_for_status()
+        data = await request_payment(amount, detail)
+        transaction = session.exec(select(Transaction).where(Transaction.idTrx == data["transactionId"])).first()
         
-        data = response.json()
+        # Check if the transaction is None
+        if transaction is not None:
+            raise HTTPException(status_code=400, detail="Transaction already exists")
+        else:
+            transaction = QR(
+                qr=data["qr"],
+                transaction_id=data["transactionId"],
+                payment_url=data.get("deeplink"),
+                status=PaymentStatus.PENDING.value
+            )
         
-        # Here we'll add the logic to:
-        # 1. Store in database
-        # 2. Handle the status states
-        # 3. Return appropriate response
-        
+        # Store the transaction in the database
+        session.add(transaction)
+        session.commit()
+        session.refresh(transaction)
+
         return {
             "transaction_id": data["transactionId"],
-            "status": data["status"],
+            "status": PaymentStatus.PENDING.value,
+            "payment_url": data.get("deeplink"),
             "qr_code": data["qr"]
         }
 
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/check-transaction")
+async def check_transaction(transaction_id: int, session: SessionDep):
+    exists = check_transaction_exists(session, transaction_id)
+    return {"exists": exists}
