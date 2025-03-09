@@ -10,7 +10,7 @@ class UserSearch(SQLModel):
     id: str
 
 class UserAuth(SQLModel):
-    email: str
+    username: str
     password: str
 
 class UserCreate(SQLModel):
