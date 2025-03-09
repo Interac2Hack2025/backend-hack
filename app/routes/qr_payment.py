@@ -18,6 +18,9 @@ from typing import Dict, Any
 from enum import Enum
 from db import SessionDep
 from models.transactions import Transaction
+from datetime import datetime
+from routes.users import get_current_user
+
 
 
 router = APIRouter(prefix="/qr-payment", tags=["qr-payment"])
@@ -74,10 +77,10 @@ async def create_payment(amount: float, detail: str, session: SessionDep):
             #     created_at=datetime.now(),
             #     updated_at=datetime.now()
             # )
-            
         
         # Store the transaction in the database
         session.add(qr_generated)
+        #session.add(transaction)
         session.commit()
         session.refresh(qr_generated)
 
@@ -92,7 +95,11 @@ async def create_payment(amount: float, detail: str, session: SessionDep):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def check_transaction_exists(transaction_id: str, session: SessionDep) -> bool:
+    transaction = session.exec(select(QR).where(QR.transaction_id == transaction_id)).first()
+    return transaction is not None
+
 @router.post("/check-transaction")
-async def check_transaction(transaction_id: int, session: SessionDep):
-    exists = check_transaction_exists(session, transaction_id)
+async def check_transaction(transaction_id: str, session: SessionDep):
+    exists = check_transaction_exists(transaction_id, session)
     return {"exists": exists}

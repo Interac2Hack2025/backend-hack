@@ -13,6 +13,6 @@ from typing import Optional
 
 class QR(SQLModel, table=True):
     qr: str = Field(default=None, primary_key=True)
-    transaction_id: int = Field(default=None, primary_key=True)
+    transaction_id: str = Field(default=None, primary_key=True)
     payment_url: str = Field(default=None)
     status: int = Field(default=None, ge=1, le=3) 
