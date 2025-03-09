@@ -61,3 +61,26 @@ async def create_user_type(tipo_usuario: TipoUsuario, session: SessionDep):
     session.commit()
     session.refresh(tipo_usuario)
     return tipo_usuario
+
+
+@router.put("/update")
+async def update_user(
+    session: SessionDep,
+    email: str,
+    password: str | None = None,
+    role: int | None = None,
+    # current_user: User = Depends(get_current_user)
+):
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if password:
+        user.password = password
+    if role:
+        user.role = role
+    
+    # session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"message": "Usuario actualizado exitosamente"}
