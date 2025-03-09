@@ -32,13 +32,13 @@ async def read_users_me(session: SessionDep,
     if not current_user:
         raise HTTPException(status_code=404, detail="Not found")
     else:
-        user = session.exec(select(User).where(User.email == current_user["username"])).first()
+        user = session.exec(select(User).where(User.email == current_user["username"])).last()
     return user
 
 @router.post("/auth",response_model=dict, description="Obtener token de acceso")
 async def auth_user(user_auth: UserAuth, 
                     session: SessionDep):
-    user = session.exec(select(User).where(User.email == user_auth.username)).first()
+    user = session.exec(select(User).where(User.email == user_auth.username)).last()
     if not user or user.password != user_auth.password: 
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token(data={"sub": user.email})
