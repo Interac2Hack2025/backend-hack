@@ -28,6 +28,8 @@ def get_current_user(token: Annotated[UserAuth, Depends(oauth2_scheme)]):
 
 @router.get("/me", response_model=UserMe, dependencies=[Depends(get_current_user)])
 async def read_users_me(current_user: User = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(status_code=404, detail="Not found")
     return current_user
 
 @router.post("/auth",response_model=dict, description="Obtener token de acceso")
