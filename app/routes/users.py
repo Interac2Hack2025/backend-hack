@@ -1,33 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
-from functions.auth import ALGORITHM, SECRET_KEY, create_access_token
+from functions.auth import create_access_token, verify_access_token
 from schemas.users import UserMe, UserAuth, UserCreate
 from db import SessionDep
 from models.users import User
 from models.tipos_users import TipoUsuario
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
 
 router = APIRouter(prefix="/user", tags=["users"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/auth")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_email: str = payload.get("sub")
-        if user_email is None:
-            raise HTTPException(status_code=403, detail="Invalid credentials")
-        return user_email
-    except JWTError:
-        raise HTTPException(status_code=403, detail="Invalid credentials")
+    payload = verify_access_token(token)
+    user_email: str = payload.get("sub")
+    if user_email is None:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return user_email
 
-@router.get("/me", response_model=UserMe)
-async def read_users_me(current_user: str = Depends(get_current_user)):
-    return {"email": current_user}
+@router.get("/me", response_model=UserMe, dependencies=[Depends(get_current_user)])
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @router.post("/auth")
 async def auth_user(user_auth: UserAuth, session: SessionDep):
     user = session.exec(select(User).where(User.email == user_auth.email)).first()
+    print(user)
     if not user or user.password != user_auth.password: 
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token(data={"sub": user.email})
