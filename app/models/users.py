@@ -1,9 +1,10 @@
+import uuid
 from sqlmodel import Relationship, SQLModel, Field
 from typing import Optional
 from models.tipos_users import TipoUsuario
 
 class User(SQLModel, table=True):
-    id: str = Field(primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
     email: str
     password: str
